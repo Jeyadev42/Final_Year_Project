@@ -1,0 +1,134 @@
+{
+  "top_5_queries": [
+    {
+      "id": "q19",
+      "overall": 0.7518127459143614
+    },
+    {
+      "id": "q11",
+      "overall": 0.7507268754360722
+    },
+    {
+      "id": "q15",
+      "overall": 0.7471923879236388
+    },
+    {
+      "id": "q14",
+      "overall": 0.7463690587959451
+    },
+    {
+      "id": "q33",
+      "overall": 0.734716598113473
+    }
+  ],
+  "bottom_5_queries": [
+    {
+      "id": "q28",
+      "overall": 0.5205970673242614
+    },
+    {
+      "id": "q46",
+      "overall": 0.5482884636301324
+    },
+    {
+      "id": "q1",
+      "overall": 0.5521817056423514
+    },
+    {
+      "id": "q41",
+      "overall": 0.5530177780638063
+    },
+    {
+      "id": "q7",
+      "overall": 0.5562196561118944
+    }
+  ],
+  "contradiction_cases": [
+    {
+      "id": "q1",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q8",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q10",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q12",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q13",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q18",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q22",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q24",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q28",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q30",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q31",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q37",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q38",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q39",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q41",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q45",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q46",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q47",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q48",
+      "contradiction": 1.0
+    },
+    {
+      "id": "q49",
+      "contradiction": 1.0
+    }
+  ],
+  "low_grounding_cases": [
+    {
+      "id": "q35",
+      "grounding": 0.5714285714285714
+    }
+  ]
+}

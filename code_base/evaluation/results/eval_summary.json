@@ -1,0 +1,9 @@
+{
+  "avg_relevance": 0.6727,
+  "avg_grounding": 0.8598,
+  "avg_completeness": 0.5,
+  "avg_contradiction": 0.41,
+  "avg_reliability": 0.69,
+  "avg_overall": 0.6526,
+  "total_items": 50
+}
