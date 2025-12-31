@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import sys
 from typing import List, Dict, Any
 
 import requests
@@ -9,6 +10,10 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 
 from evaluation_utils import evaluate_answer
+from llm_clients import build_eval_llm, run_local_llm
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from vector_store import VectorStore
 
 
 # -------------------------------------------------------
@@ -16,6 +21,7 @@ from evaluation_utils import evaluate_answer
 # -------------------------------------------------------
 
 CONFIG_PATH = "../config.json"  # adjust if running from another folder
+VECTOR_DB_PATH = "../cache.db"
 
 if not os.path.exists(CONFIG_PATH):
     raise FileNotFoundError("config.json not found. Please create it with GOOGLE_API_KEY and GOOGLE_CX.")
@@ -25,6 +31,7 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as f:
 
 GOOGLE_API_KEY = cfg["GOOGLE_API_KEY"]
 GOOGLE_CX = cfg["GOOGLE_CX"]
+eval_llm_fn = build_eval_llm(cfg)
 
 GOLDEN_FILE = "../golden_dataset.jsonl"  # path relative to this script
 RESULT_DIR = "results"
@@ -48,30 +55,6 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
     if na == 0 or nb == 0:
         return 0.0
     return float(np.dot(a, b) / (na * nb))
-
-
-# -------------------------------------------------------
-# LOCAL LLM VIA OLLAMA (gemma3:4b) – SAME AS APP
-# -------------------------------------------------------
-
-def run_local_llm(prompt: str) -> str:
-    """
-    Run a local Ollama LLM (gemma3:4b).
-    """
-    try:
-        resp = requests.post(
-            "http://localhost:11434/api/chat",
-            json={
-                "model": "gemma3:4b",
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-            },
-            timeout=120,
-        )
-        response_json = resp.json()
-        return response_json["message"]["content"].strip()
-    except Exception as e:
-        return f"(Local LLM error: {e})"
 
 
 def academic_rewrite(text: str) -> str:
@@ -286,8 +269,15 @@ Return only the bullet points.
 # WEB ANSWER SYNTHESIS (SAME AS APP)
 # -------------------------------------------------------
 
-def synthesize_web_answer(user_query: str, summaries: List[str]) -> str:
+def synthesize_web_answer(
+    user_query: str,
+    summaries: List[str],
+    rag_chunks: List[dict],
+) -> str:
     combined = "\n".join(summaries)
+    context = "\n\n".join(
+        f"Source: {c['url']}\n{c['content']}" for c in rag_chunks
+    )
 
     prompt = f"""
 You are writing an academically structured explanation based on multiple summarized sources.
@@ -298,18 +288,22 @@ User query:
 Relevant extracted summaries:
 {combined}
 
+Retrieved context chunks:
+{context}
+
 Your task:
 1. Use all relevant information from the summaries.
-2. Add missing conceptual fundamentals using your own knowledge.
-3. Provide a complete academic explanation.
-4. Include:
+2. Use retrieved context chunks as grounding evidence.
+3. Add missing conceptual fundamentals using your own knowledge.
+4. Provide a complete academic explanation.
+5. Include:
    - definition
    - mechanism or working principle
    - general use cases
    - examples (if relevant)
-5. Focus on the intended technical meaning of the query.
-6. Do not include follow-up questions or conversational remarks.
-7. Return only the explanation.
+6. Focus on the intended technical meaning of the query.
+7. Do not include follow-up questions or conversational remarks.
+8. Return only the explanation.
 
 Write a complete academic answer below.
     """
@@ -391,7 +385,16 @@ def run_pipeline(query: str, max_results: int = 10) -> Dict[str, Any]:
             }
         )
 
-    # 5. Local answer (no web)
+    # 5. RAG vector store context
+    vector_store = VectorStore(VECTOR_DB_PATH, embedding_model)
+    vector_store.add_pages(top_k)
+    rag_chunks = vector_store.query(
+        query,
+        top_k=6,
+        urls=[p["url"] for p in top_k],
+    )
+
+    # 6. Local answer (no web)
     local_prompt = (
         "You are to provide a factual, academic explanation to the user query. "
         "Produce only the answer. "
@@ -401,10 +404,14 @@ def run_pipeline(query: str, max_results: int = 10) -> Dict[str, Any]:
     )
     local_answer = run_local_llm(local_prompt)
 
-    # 6. Web-based synthesized answer
-    web_answer = synthesize_web_answer(query, [s["summary"] for s in summaries])
+    # 7. Web-based synthesized answer
+    web_answer = synthesize_web_answer(
+        query,
+        [s["summary"] for s in summaries],
+        rag_chunks,
+    )
 
-    # 7. Fused final answer (local + web)
+    # 8. Fused final answer (local + web)
     fused_prompt = f"""
 You have two answers to the same question.
 
@@ -432,6 +439,7 @@ Your task:
         "search_results": search_results,
         "used_sources": top_k,
         "summaries": summaries,
+        "rag_chunks": rag_chunks,
         "local_answer": local_answer,
         "web_answer": web_answer,
         "final_answer": final_answer,
@@ -487,7 +495,7 @@ def run_eval_pipeline():
                 sources=used_sources,
                 stability=None,               # no historical stability in offline eval
                 embedding_model=embedding_model,
-                llm_fn=run_local_llm,
+                llm_fn=eval_llm_fn,
             )
 
             result = {

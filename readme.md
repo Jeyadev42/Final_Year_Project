@@ -181,6 +181,36 @@ Your config.json must contain:
 
 ```
 
+Optional: Auto-evaluation LLM (Future Work Implemented)
+
+You can enable GPT-4o-mini or DeepSeek R1 for evaluation metrics (completeness + contradiction).
+Add any of the following to config.json:
+
+```json
+{
+  "EVAL_LLM_PROVIDER": "openai",
+  "EVAL_LLM_MODEL": "gpt-4o-mini",
+  "OPENAI_API_KEY": "your_openai_key"
+}
+```
+
+or
+
+```json
+{
+  "EVAL_LLM_PROVIDER": "deepseek",
+  "EVAL_LLM_MODEL": "deepseek-r1",
+  "DEEPSEEK_API_KEY": "your_deepseek_key"
+}
+```
+
+You can override the base URL if needed:
+```json
+{
+  "EVAL_LLM_BASE_URL": "https://api.openai.com/v1"
+}
+```
+
 ## 6. Running the Application
 ### 6.1 Main App
 ```bash
@@ -408,8 +438,8 @@ This emphasizes the importance of:
 - Penalizing unreliable sources earlier
 
 ## 11. Future Work 
-- Implement retrieval-augmented generation (RAG) with vector DB
+- ✅ Implement retrieval-augmented generation (RAG) with vector DB
 
-- Add auto-evaluation using GPT-4o-mini or DeepSeek R1
+- ✅ Add auto-evaluation using GPT-4o-mini or DeepSeek R1
 
 - Expand golden dataset to 100–300 questions
