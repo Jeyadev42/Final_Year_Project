@@ -8,32 +8,25 @@ from evaluation_utils import (
     evaluate_answer,
 )
 from evaluation_utils import ollama_embed as embedding_model  # embedding model alias
-
-# If needed, import or define your local LLM runner
-def run_local_llm(prompt: str) -> str:
-    """
-    Minimal safe LLM wrapper for benchmark.
-    Does not require UI.
-    """
-    import requests
-    try:
-        r = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model": "gemma3:4b", "prompt": prompt},
-            timeout=30
-        )
-        return r.json().get("response", "")
-    except Exception:
-        return ""
+from llm_clients import build_eval_llm
 
 
 # -----------------------------
 # Configuration
 # -----------------------------
+CONFIG_PATH = "../config.json"
 GOLDEN_FILE = "../golden_dataset.jsonl"
 RESULT_DIR = "results"
 OUTPUT_FILE = "results/benchmark_output.jsonl"
 SUMMARY_FILE = "results/summary.json"
+
+if os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+else:
+    cfg = {}
+
+eval_llm_fn = build_eval_llm(cfg)
 
 
 # -----------------------------
@@ -75,7 +68,7 @@ def run_benchmark():
                 sources=[],                   # No sources fetched in benchmark
                 stability=0.5,                # Neutral stability for benchmark
                 embedding_model=embedding_model,
-                llm_fn=run_local_llm,
+                llm_fn=eval_llm_fn,
             )
 
             # 3 — store result
